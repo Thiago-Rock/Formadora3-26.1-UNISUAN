@@ -6,61 +6,53 @@ import {
   StyleSheet,
   Alert,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 
 import { Ionicons } from "@expo/vector-icons";
 
-import { supabase } from "../services/supabase";
+import { deleteUser, listUsers } from "../services/usersApi";
 
 import { useFocusEffect } from "@react-navigation/native";
 
 export default function HomeScreen({ navigation }) {
   const [usuarios, setUsuarios] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   function abrirEdicao(usuario) {
     navigation.navigate("Cadastro", { usuario });
   }
 
   async function buscarUsuarios() {
-    const { data, error } = await supabase
-      .from("user")
-      .select("*")
-      .order("id", { ascending: false });
+    setLoading(true);
 
-    if (error) {
+    try {
+      const data = await listUsers();
+      setUsuarios(data || []);
+    } catch (error) {
+      Alert.alert("Erro", "Nao foi possivel carregar os usuarios da API.");
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function executarExclusao(id) {
+    try {
+      await deleteUser(id);
+      setUsuarios((estadoAnterior) =>
+        estadoAnterior.filter((usuario) => usuario.id !== id)
+      );
+    } catch (error) {
+      Alert.alert("Erro ao excluir", "Nao foi possivel excluir na API.");
       console.log(error);
       return;
     }
-
-    setUsuarios(data);
   }
 
   async function deletarUsuario(id) {
-    const executarExclusao = async () => {
-      const { data, error } = await supabase
-        .from("user")
-        .delete()
-        .eq("id", id)
-        .select("id");
-
-      if (error) {
-        Alert.alert("Erro ao excluir", error.message);
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        Alert.alert(
-          "Nada foi excluído",
-          "Nenhum registro foi afetado. Verifique policy RLS de DELETE para o papel usado pelo app (anon/authenticated)."
-        );
-        return;
-      }
-
-      buscarUsuarios();
-    };
-
     if (Platform.OS === "web") {
       const confirmou = globalThis.confirm
         ? globalThis.confirm("Deseja realmente excluir este usuário?")
@@ -70,7 +62,7 @@ export default function HomeScreen({ navigation }) {
         return;
       }
 
-      await executarExclusao();
+      await executarExclusao(id);
       return;
     }
 
@@ -86,7 +78,7 @@ export default function HomeScreen({ navigation }) {
         {
           text: "Excluir",
           style: "destructive",
-          onPress: executarExclusao,
+          onPress: () => executarExclusao(id),
         },
       ]
     );
@@ -100,6 +92,8 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {loading ? <ActivityIndicator size="large" color="#000" /> : null}
+
       <FlatList
         data={usuarios}
         keyExtractor={(item) => item.id.toString()}
@@ -130,9 +124,7 @@ export default function HomeScreen({ navigation }) {
           </View>
         )}
         ListEmptyComponent={
-          <Text style={styles.empty}>
-            Nenhum usuário cadastrado
-          </Text>
+          !loading ? <Text style={styles.empty}>Nenhum usuario encontrado</Text> : null
         }
       />
 

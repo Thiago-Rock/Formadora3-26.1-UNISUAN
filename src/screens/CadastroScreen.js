@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Alert, Button, StyleSheet, Text, TextInput, View } from "react-native";
-import { supabase } from "../services/supabase";
+import { createUser, updateUser } from "../services/usersApi";
 
 export default function CadastroScreen({ route, navigation }) {
   const [name, setName] = useState("");
@@ -21,33 +21,22 @@ export default function CadastroScreen({ route, navigation }) {
       return;
     }
 
-    if (usuario) {
-      const { error } = await supabase
-        .from("user")
-        .update({ name, email })
-        .eq("id", usuario.id);
-
-      if (error) {
-        Alert.alert("Erro ao atualizar", error.message);
+    try {
+      if (usuario) {
+        await updateUser(usuario.id, { name, email });
+        Alert.alert("Sucesso", "Usuario atualizado na API.");
+        navigation.goBack();
         return;
       }
 
-      Alert.alert("Sucesso", "Usuário atualizado!");
+      await createUser({ name, email });
+      Alert.alert("Sucesso", "Usuario enviado para a API.");
+      setName("");
+      setEmail("");
       navigation.goBack();
-      return;
+    } catch (error) {
+      Alert.alert("Erro", "Nao foi possivel salvar na API.");
     }
-
-    const { error } = await supabase.from("user").insert({ name, email });
-
-    if (error) {
-      Alert.alert("Erro", "Não foi possível salvar.");
-      return;
-    }
-
-    Alert.alert("Sucesso", "Usuário cadastrado!");
-    setName("");
-    setEmail("");
-    navigation.goBack();
   }
 
   return (
