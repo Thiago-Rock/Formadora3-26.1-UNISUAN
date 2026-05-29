@@ -13,13 +13,14 @@ import { useState, useCallback } from "react";
 
 import { Ionicons } from "@expo/vector-icons";
 
-import { deleteUser, listUsers } from "../services/usersApi";
+import { deleteUser, getDataMode, listUsers } from "../services/userGateway";
 
 import { useFocusEffect } from "@react-navigation/native";
 
 export default function HomeScreen({ navigation }) {
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(false);
+  const dataMode = getDataMode();
 
   function abrirEdicao(usuario) {
     navigation.navigate("Cadastro", { usuario });
@@ -32,27 +33,27 @@ export default function HomeScreen({ navigation }) {
       const data = await listUsers();
       setUsuarios(data || []);
     } catch (error) {
-      Alert.alert("Erro", "Nao foi possivel carregar os usuarios da API.");
+      Alert.alert("Erro", "Nao foi possivel carregar os usuarios.");
       console.log(error);
     } finally {
       setLoading(false);
     }
   }
 
-  async function executarExclusao(id) {
+  async function executarExclusao(usuario) {
     try {
-      await deleteUser(id);
+      await deleteUser(usuario);
       setUsuarios((estadoAnterior) =>
-        estadoAnterior.filter((usuario) => usuario.id !== id)
+        estadoAnterior.filter((item) => item.id !== usuario.id)
       );
     } catch (error) {
-      Alert.alert("Erro ao excluir", "Nao foi possivel excluir na API.");
+      Alert.alert("Erro ao excluir", "Nao foi possivel excluir o usuario.");
       console.log(error);
       return;
     }
   }
 
-  async function deletarUsuario(id) {
+  async function deletarUsuario(usuario) {
     if (Platform.OS === "web") {
       const confirmou = globalThis.confirm
         ? globalThis.confirm("Deseja realmente excluir este usuário?")
@@ -62,7 +63,7 @@ export default function HomeScreen({ navigation }) {
         return;
       }
 
-      await executarExclusao(id);
+      await executarExclusao(usuario);
       return;
     }
 
@@ -78,7 +79,7 @@ export default function HomeScreen({ navigation }) {
         {
           text: "Excluir",
           style: "destructive",
-          onPress: () => executarExclusao(id),
+          onPress: () => executarExclusao(usuario),
         },
       ]
     );
@@ -92,6 +93,8 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.mode}>Modo de dados: {dataMode}</Text>
+
       {loading ? <ActivityIndicator size="large" color="#000" /> : null}
 
       <FlatList
@@ -116,7 +119,7 @@ export default function HomeScreen({ navigation }) {
               <TouchableOpacity
                 style={styles.iconButton}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                onPress={() => deletarUsuario(item.id)}
+                onPress={() => deletarUsuario(item)}
               >
                 <Ionicons name="trash-outline" size={24} color="red" />
               </TouchableOpacity>
@@ -149,6 +152,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 50,
     fontSize: 18,
+  },
+
+  mode: {
+    textAlign: "center",
+    marginBottom: 10,
+    color: "#555",
   },
 
   card: {

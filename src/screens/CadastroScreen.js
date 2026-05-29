@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Alert, Button, StyleSheet, Text, TextInput, View } from "react-native";
-import { createUser, updateUser } from "../services/usersApi";
+import { createUser, getDataMode, updateUser } from "../services/userGateway";
 
 export default function CadastroScreen({ route, navigation }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const dataMode = getDataMode();
 
   const usuario = route.params?.usuario;
 
@@ -23,14 +24,14 @@ export default function CadastroScreen({ route, navigation }) {
 
     try {
       if (usuario) {
-        await updateUser(usuario.id, { name, email });
-        Alert.alert("Sucesso", "Usuario atualizado na API.");
+        await updateUser(usuario, { name, email });
+        Alert.alert("Sucesso", `Usuario atualizado (${dataMode}).`);
         navigation.goBack();
         return;
       }
 
       await createUser({ name, email });
-      Alert.alert("Sucesso", "Usuario enviado para a API.");
+      Alert.alert("Sucesso", `Usuario salvo (${dataMode}).`);
       setName("");
       setEmail("");
       navigation.goBack();
@@ -41,6 +42,8 @@ export default function CadastroScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.mode}>Modo de dados: {dataMode}</Text>
+
       <Text style={styles.label}>Nome</Text>
       <TextInput value={name} onChangeText={setName} style={styles.input} />
 
@@ -59,6 +62,10 @@ const styles = StyleSheet.create({
   },
   label: {
     fontWeight: "600",
+  },
+  mode: {
+    color: "#555",
+    marginBottom: 10,
   },
   input: {
     borderWidth: 1,
