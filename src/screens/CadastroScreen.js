@@ -42,8 +42,7 @@ export default function CadastroScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.mode}>Modo de dados: {dataMode}</Text>
-
+      
       <Text style={styles.label}>Nome</Text>
       <TextInput value={name} onChangeText={setName} style={styles.input} />
 

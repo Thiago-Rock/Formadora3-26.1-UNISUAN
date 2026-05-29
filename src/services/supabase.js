@@ -5,7 +5,8 @@ import 'react-native-url-polyfill/auto'
 
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-import { createClient } from '@supabase/supabase-js'
+// Usa a build CJS para evitar falha de Hermes com dynamic import da build ESM.
+import { createClient } from '@supabase/supabase-js/dist/index.cjs'
 
 const supabaseUrl = 'https://hmtjzwcsqnjqxqoaclea.supabase.co'
 

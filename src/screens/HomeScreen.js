@@ -93,7 +93,7 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.mode}>Modo de dados: {dataMode}</Text>
+      
 
       {loading ? <ActivityIndicator size="large" color="#000" /> : null}
 
